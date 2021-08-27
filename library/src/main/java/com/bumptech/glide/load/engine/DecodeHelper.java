@@ -1,5 +1,6 @@
 package com.bumptech.glide.load.engine;
 
+import android.util.Log;
 import com.bumptech.glide.GlideContext;
 import com.bumptech.glide.Priority;
 import com.bumptech.glide.Registry;
@@ -183,9 +184,10 @@ final class DecodeHelper<Transcode> {
     return glideContext.getRegistry().getResultEncoder(resource);
   }
 
-  List<ModelLoader<File, ?>> getModelLoaders(File file)
-      throws Registry.NoModelLoaderAvailableException {
-    return glideContext.getRegistry().getModelLoaders(file);
+  List<ModelLoader<File, ?>> getModelLoaders(File file) throws Registry.NoModelLoaderAvailableException {
+    List<ModelLoader<File, ?>> loaders = glideContext.getRegistry().getModelLoaders(file);
+    Log.d("vnjfnvfnvbf", "getModelLoaders: " + loaders.size());
+    return loaders;
   }
 
   boolean isSourceKey(Key key) {

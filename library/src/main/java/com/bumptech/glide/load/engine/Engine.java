@@ -24,6 +24,7 @@ import com.bumptech.glide.util.Synthetic;
 import com.bumptech.glide.util.pool.FactoryPools;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import org.json.JSONObject;
 
 /** Responsible for starting loads and managing active and cached resources. */
 public class Engine
@@ -173,7 +174,7 @@ public class Engine
       ResourceCallback cb,
       Executor callbackExecutor) {
     long startTime = VERBOSE_IS_LOGGABLE ? LogTime.getLogTime() : 0;
-
+    // 生成一个key
     EngineKey key =
         keyFactory.buildKey(
             model,
@@ -187,13 +188,11 @@ public class Engine
 
     EngineResource<?> memoryResource;
     synchronized (this) {
+      // 从内存中加载
       memoryResource = loadFromMemory(key, isMemoryCacheable, startTime);
-
       if (memoryResource == null) {
-        return waitForExistingOrStartNewJob(
-            glideContext,
-            model,
-            signature,
+        // 内存为空
+        return waitForExistingOrStartNewJob(glideContext, model, signature,
             width,
             height,
             resourceClass,
@@ -214,11 +213,10 @@ public class Engine
             startTime);
       }
     }
-
     // Avoid calling back while holding the engine lock, doing so makes it easier for callers to
     // deadlock.
-    cb.onResourceReady(
-        memoryResource, DataSource.MEMORY_CACHE, /* isLoadedFromAlternateCacheKey= */ false);
+    // 内存中有，直接回调内存
+    cb.onResourceReady(memoryResource, DataSource.MEMORY_CACHE, /* isLoadedFromAlternateCacheKey= */ false);
     return null;
   }
 
@@ -244,18 +242,18 @@ public class Engine
       Executor callbackExecutor,
       EngineKey key,
       long startTime) {
-
+    // 当前的 job
     EngineJob<?> current = jobs.get(key, onlyRetrieveFromCache);
     if (current != null) {
+      // 当前的job正在执行（同一个key的job）
       current.addCallback(cb, callbackExecutor);
       if (VERBOSE_IS_LOGGABLE) {
         logWithTimeAndKey("Added to existing load", startTime, key);
       }
       return new LoadStatus(cb, current);
     }
-
-    EngineJob<R> engineJob =
-        engineJobFactory.build(
+    // 不存在于当前加载的图片对应的job时，构建一个新的job
+    EngineJob<R> engineJob = engineJobFactory.build(
             key,
             isMemoryCacheable,
             useUnlimitedSourceExecutorPool,
@@ -284,6 +282,7 @@ public class Engine
     jobs.put(key, engineJob);
 
     engineJob.addCallback(cb, callbackExecutor);
+    // 执行decode的run方法
     engineJob.start(decodeJob);
 
     if (VERBOSE_IS_LOGGABLE) {

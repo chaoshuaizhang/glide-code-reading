@@ -217,17 +217,19 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
       startTime = LogTime.getLogTime();
       if (model == null) {
         if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
+          // 手动设置的宽高：override(int width, int height)
           width = overrideWidth;
           height = overrideHeight;
         }
         // Only log at more verbose log levels if the user has set a fallback drawable, because
         // fallback Drawables indicate the user expects null models occasionally.
         int logLevel = getFallbackDrawable() == null ? Log.WARN : Log.DEBUG;
+        // 加载失败
         onLoadFailed(new GlideException("Received null model"), logLevel);
         return;
       }
-
       if (status == Status.RUNNING) {
+        // 正在RUNNING的request不能重复开启
         throw new IllegalArgumentException("Cannot restart a running request");
       }
 
@@ -238,8 +240,8 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
       // that the view size has changed will need to explicitly clear the View or Target before
       // starting the new load.
       if (status == Status.COMPLETE) {
-        onResourceReady(
-            resource, DataSource.MEMORY_CACHE, /* isLoadedFromAlternateCacheKey= */ false);
+        // 请求已经结束
+        onResourceReady(resource, DataSource.MEMORY_CACHE, /* isLoadedFromAlternateCacheKey= */ false);
         return;
       }
 
@@ -248,13 +250,14 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
 
       status = Status.WAITING_FOR_SIZE;
       if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
+        // 如果设置了override，则在这里执行onSizeReady
         onSizeReady(overrideWidth, overrideHeight);
       } else {
+        // 默认情况，注意这里传的回调是自己：this
         target.getSize(this);
       }
-
-      if ((status == Status.RUNNING || status == Status.WAITING_FOR_SIZE)
-          && canNotifyStatusChanged()) {
+      if ((status == Status.RUNNING || status == Status.WAITING_FOR_SIZE) && canNotifyStatusChanged()) {
+        // 开始加载，这里主要是设置占位图
         target.onLoadStarted(getPlaceholderDrawable());
       }
       if (IS_VERBOSE_LOGGABLE) {
@@ -427,7 +430,7 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
     target.onLoadFailed(error);
   }
 
-  /** A callback method that should never be invoked directly. */
+  // 不能被直接调用的回调方法
   @Override
   public void onSizeReady(int width, int height) {
     stateVerifier.throwIfRecycled();
@@ -436,10 +439,10 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
         logV("Got onSizeReady in " + LogTime.getElapsedMillis(startTime));
       }
       if (status != Status.WAITING_FOR_SIZE) {
+        // 等待获取图片宽高
         return;
       }
       status = Status.RUNNING;
-
       float sizeMultiplier = requestOptions.getSizeMultiplier();
       this.width = maybeApplySizeMultiplier(width, sizeMultiplier);
       this.height = maybeApplySizeMultiplier(height, sizeMultiplier);
@@ -447,8 +450,8 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
       if (IS_VERBOSE_LOGGABLE) {
         logV("finished setup for calling load in " + LogTime.getElapsedMillis(startTime));
       }
-      loadStatus =
-          engine.load(
+      // 开始加载图片
+      loadStatus = engine.load(
               glideContext,
               model,
               requestOptions.getSignature(),
@@ -522,24 +525,17 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
   /** A callback method that should never be invoked directly. */
   @SuppressWarnings("unchecked")
   @Override
-  public void onResourceReady(
-      Resource<?> resource, DataSource dataSource, boolean isLoadedFromAlternateCacheKey) {
+  public void onResourceReady(Resource<?> resource, DataSource dataSource, boolean isLoadedFromAlternateCacheKey) {
     stateVerifier.throwIfRecycled();
     Resource<?> toRelease = null;
     try {
       synchronized (requestLock) {
         loadStatus = null;
         if (resource == null) {
-          GlideException exception =
-              new GlideException(
-                  "Expected to receive a Resource<R> with an "
-                      + "object of "
-                      + transcodeClass
-                      + " inside, but instead got null.");
+          GlideException exception = new GlideException("Expected to receive a Resource<R> with an " + "object of " + transcodeClass + " inside, but instead got null.");
           onLoadFailed(exception);
           return;
         }
-
         Object received = resource.get();
         if (received == null || !transcodeClass.isAssignableFrom(received.getClass())) {
           toRelease = resource;
@@ -575,8 +571,7 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
           return;
         }
 
-        onResourceReady(
-            (Resource<R>) resource, (R) received, dataSource, isLoadedFromAlternateCacheKey);
+        onResourceReady((Resource<R>) resource, (R) received, dataSource, isLoadedFromAlternateCacheKey);
       }
     } finally {
       if (toRelease != null) {
@@ -602,46 +597,26 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
     boolean isFirstResource = isFirstReadyResource();
     status = Status.COMPLETE;
     this.resource = resource;
-
     if (glideContext.getLogLevel() <= Log.DEBUG) {
-      Log.d(
-          GLIDE_TAG,
-          "Finished loading "
-              + result.getClass().getSimpleName()
-              + " from "
-              + dataSource
-              + " for "
-              + model
-              + " with size ["
-              + width
-              + "x"
-              + height
-              + "] in "
-              + LogTime.getElapsedMillis(startTime)
-              + " ms");
+      Log.d(GLIDE_TAG, "Finished loading " + result.getClass().getSimpleName() + " from " + dataSource + " for " + model + " with size [" + width + "x" + height + "] in " + LogTime.getElapsedMillis(startTime) + " ms");
     }
-
     isCallingCallbacks = true;
     try {
       boolean anyListenerHandledUpdatingTarget = false;
       if (requestListeners != null) {
         for (RequestListener<R> listener : requestListeners) {
-          anyListenerHandledUpdatingTarget |=
-              listener.onResourceReady(result, model, target, dataSource, isFirstResource);
+          anyListenerHandledUpdatingTarget |= listener.onResourceReady(result, model, target, dataSource, isFirstResource);
         }
       }
-      anyListenerHandledUpdatingTarget |=
-          targetListener != null
-              && targetListener.onResourceReady(result, model, target, dataSource, isFirstResource);
-
+      anyListenerHandledUpdatingTarget |= targetListener != null && targetListener.onResourceReady(result, model, target, dataSource, isFirstResource);
       if (!anyListenerHandledUpdatingTarget) {
         Transition<? super R> animation = animationFactory.build(dataSource, isFirstResource);
+        // 最终开始给imageview设置图片
         target.onResourceReady(result, animation);
       }
     } finally {
       isCallingCallbacks = false;
     }
-
     notifyLoadSuccess();
   }
 

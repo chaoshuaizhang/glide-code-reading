@@ -1,5 +1,6 @@
 package com.bumptech.glide.samples.imgur;
 
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -12,6 +13,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.target.ViewTarget;
 import com.bumptech.glide.samples.imgur.api.Image;
 import dagger.android.AndroidInjection;
 import java.util.Collections;
@@ -89,8 +92,17 @@ public final class MainActivity extends AppCompatActivity {
       ViewHolder vh = (ViewHolder) holder;
       Image image = images.get(position);
       vh.title.setText(TextUtils.isEmpty(image.title) ? image.description : image.title);
-
-      ImgurGlide.with(vh.imageView).load(image.link).into(vh.imageView);
+      // ImgurGlide.with(vh.imageView).load(image.link).into(vh.imageView);
+      /*
+       * Glide对象 单例
+       * RequestManager 单例
+       * */
+      // 获取一个requestManager
+      Glide.with(vh.imageView)
+          // load默认替我们执行了asDrawable方法
+          // 返回一个RequestBuilder-实际上是GlideRequest，每进行一次请求，就会构建一个GlideRequest实例，这个对象是运行时生成的类
+          .load(image.link)
+          .into(vh.imageView);
     }
 
     @Override

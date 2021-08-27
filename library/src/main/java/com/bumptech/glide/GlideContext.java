@@ -95,8 +95,12 @@ public class GlideContext extends ContextWrapper {
   }
 
   @NonNull
-  public <X> ViewTarget<ImageView, X> buildImageViewTarget(
-      @NonNull ImageView imageView, @NonNull Class<X> transcodeClass) {
+  public <X> ViewTarget<ImageView, X> buildImageViewTarget(@NonNull ImageView imageView, @NonNull Class<X> transcodeClass) {
+    /*
+    * 根据transcodeClass的类型，返回对应类型的ImageViewTarget
+    * Bitmap.class -> BitmapImageViewTarget
+    * Drawable.class -> DrawableImageViewTarget
+    * */
     return imageViewTargetFactory.buildTarget(imageView, transcodeClass);
   }
 

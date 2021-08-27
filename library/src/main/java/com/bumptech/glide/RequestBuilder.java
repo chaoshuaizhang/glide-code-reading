@@ -716,29 +716,25 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
     if (!isModelSet) {
       throw new IllegalArgumentException("You must call #load() before calling #into()");
     }
-
+    // 构建一个请求的request，传的参数和into方法完全一致
     Request request = buildRequest(target, targetListener, options, callbackExecutor);
-
+    // 取出当前target的上一个request，即前一个
     Request previous = target.getRequest();
-    if (request.isEquivalentTo(previous)
-        && !isSkipMemoryCacheWithCompletePreviousRequest(options, previous)) {
-      // If the request is completed, beginning again will ensure the result is re-delivered,
-      // triggering RequestListeners and Targets. If the request is failed, beginning again will
-      // restart the request, giving it another chance to complete. If the request is already
-      // running, we can let it continue running without interruption.
+    // 如果前后两个相同（同一个view加载同一张图片）
+    if (request.isEquivalentTo(previous) && !isSkipMemoryCacheWithCompletePreviousRequest(options, previous)) {
+      // If the request is completed, beginning again will ensure the result is re-delivered, triggering RequestListeners and Targets. If the request is failed, beginning again willrestart the request, giving it another chance to complete. If the request is alreadyrunning, we can let it continue running without interruption.
       if (!Preconditions.checkNotNull(previous).isRunning()) {
-        // Use the previous request rather than the new one to allow for optimizations like skipping
-        // setting placeholders, tracking and un-tracking Targets, and obtaining View dimensions
-        // that are done in the individual Request.
+        // 如果请求没有正在执行，则立即开始
         previous.begin();
       }
+      // 直接返回，相当于这一次新的请求不再请求了
       return target;
     }
-
+    // 否则前一次请求取消，开始执行当前的请求
     requestManager.clear(target);
+    // 对target（即view）设置一个tag，tag即为 request
     target.setRequest(request);
     requestManager.track(target, request);
-
     return target;
   }
 
@@ -768,12 +764,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
     Preconditions.checkNotNull(view);
 
     BaseRequestOptions<?> requestOptions = this;
-    if (!requestOptions.isTransformationSet()
-        && requestOptions.isTransformationAllowed()
-        && view.getScaleType() != null) {
-      // Clone in this method so that if we use this RequestBuilder to load into a View and then
-      // into a different target, we don't retain the transformation applied based on the previous
-      // View's scale type.
+    if (!requestOptions.isTransformationSet() && requestOptions.isTransformationAllowed() && view.getScaleType() != null) {
       switch (view.getScaleType()) {
         case CENTER_CROP:
           requestOptions = requestOptions.clone().optionalCenterCrop();
@@ -795,12 +786,9 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
           // Do nothing.
       }
     }
-
-    return into(
-        glideContext.buildImageViewTarget(view, transcodeClass),
-        /*targetListener=*/ null,
-        requestOptions,
-        Executors.mainThreadExecutor());
+    // 返回一个viewTarget
+    ViewTarget<ImageView, TranscodeType> target = glideContext.buildImageViewTarget(view, transcodeClass);
+    return into(target, null, requestOptions, Executors.mainThreadExecutor());
   }
 
   /**

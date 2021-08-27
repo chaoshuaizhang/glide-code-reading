@@ -143,10 +143,12 @@ public class RequestManagerRetriever implements Handler.Callback {
   @NonNull
   public RequestManager get(@NonNull FragmentActivity activity) {
     if (Util.isOnBackgroundThread()) {
+      // 子线程都用applicationContext上下文，避免内存泄漏
       return get(activity.getApplicationContext());
     } else {
       assertNotDestroyed(activity);
       frameWaiter.registerSelf(activity);
+      // 获得当前activity的frag管理器
       FragmentManager fm = activity.getSupportFragmentManager();
       return supportFragmentGet(activity, fm, /*parentHint=*/ null, isActivityVisible(activity));
     }
@@ -438,17 +440,18 @@ public class RequestManagerRetriever implements Handler.Callback {
   }
 
   @NonNull
-  private SupportRequestManagerFragment getSupportRequestManagerFragment(
-      @NonNull final FragmentManager fm, @Nullable Fragment parentHint) {
-    SupportRequestManagerFragment current =
-        (SupportRequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
+  private SupportRequestManagerFragment getSupportRequestManagerFragment(@NonNull final FragmentManager fm, @Nullable Fragment parentHint) {
+    // 每个activity对应一个隐形的fragment
+    SupportRequestManagerFragment current = (SupportRequestManagerFragment) fm.findFragmentByTag(FRAGMENT_TAG);
     if (current == null) {
+      // 一个进程中只有一个 RequestManagerRetriever，所以pendingSupportRequestManagerFragments也只有一个
       current = pendingSupportRequestManagerFragments.get(fm);
       if (current == null) {
         current = new SupportRequestManagerFragment();
         current.setParentFragmentHint(parentHint);
         pendingSupportRequestManagerFragments.put(fm, current);
         fm.beginTransaction().add(current, FRAGMENT_TAG).commitAllowingStateLoss();
+        // FIXME: 2021/8/24 这里？
         handler.obtainMessage(ID_REMOVE_SUPPORT_FRAGMENT_MANAGER, fm).sendToTarget();
       }
     }
@@ -461,18 +464,17 @@ public class RequestManagerRetriever implements Handler.Callback {
       @NonNull FragmentManager fm,
       @Nullable Fragment parentHint,
       boolean isParentVisible) {
+    // 获取当前activity对应的隐形fragment
     SupportRequestManagerFragment current = getSupportRequestManagerFragment(fm, parentHint);
     RequestManager requestManager = current.getRequestManager();
     if (requestManager == null) {
       // TODO(b/27524013): Factor out this Glide.get() call.
       Glide glide = Glide.get(context);
-      requestManager =
-          factory.build(
-              glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
-      // This is a bit of hack, we're going to start the RequestManager, but not the
-      // corresponding Lifecycle. It's safe to start the RequestManager, but starting the
-      // Lifecycle might trigger memory leaks. See b/154405040
+      // 获得一个requestManager，并传入fragment的lifecycle，根据生命周期的变化停止请求
+      // 这里的manager实际上是GlideRequests，其是RequestManager的子类
+      requestManager = factory.build(glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
       if (isParentVisible) {
+        // activity可见，开启请求
         requestManager.onStart();
       }
       current.setRequestManager(requestManager);

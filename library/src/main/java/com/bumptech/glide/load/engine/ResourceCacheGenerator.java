@@ -65,7 +65,6 @@ class ResourceCacheGenerator implements DataFetcherGenerator, DataFetcher.DataCa
         }
         resourceClassIndex = 0;
       }
-
       Key sourceId = sourceIds.get(sourceIdIndex);
       Class<?> resourceClass = resourceClasses.get(resourceClassIndex);
       Transformation<?> transformation = helper.getTransformation(resourceClass);
@@ -82,6 +81,7 @@ class ResourceCacheGenerator implements DataFetcherGenerator, DataFetcher.DataCa
               transformation,
               resourceClass,
               helper.getOptions());
+      // 从磁盘缓存中获取到图片文件 - File类型
       cacheFile = helper.getDiskCache().get(currentKey);
       if (cacheFile != null) {
         sourceKey = sourceId;
@@ -94,15 +94,12 @@ class ResourceCacheGenerator implements DataFetcherGenerator, DataFetcher.DataCa
     boolean started = false;
     while (!started && hasNextModelLoader()) {
       ModelLoader<File, ?> modelLoader = modelLoaders.get(modelLoaderIndex++);
-      loadData =
-          modelLoader.buildLoadData(
-              cacheFile, helper.getWidth(), helper.getHeight(), helper.getOptions());
+      loadData = modelLoader.buildLoadData(cacheFile, helper.getWidth(), helper.getHeight(), helper.getOptions());
       if (loadData != null && helper.hasLoadPath(loadData.fetcher.getDataClass())) {
         started = true;
         loadData.fetcher.loadData(helper.getPriority(), this);
       }
     }
-
     return started;
   }
 

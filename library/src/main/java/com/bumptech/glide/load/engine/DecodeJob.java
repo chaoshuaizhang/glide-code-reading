@@ -245,10 +245,7 @@ class DecodeJob<R>
       // loads to silently hang forever, a case that's especially bad for users using Futures on
       // background threads.
       if (Log.isLoggable(TAG, Log.DEBUG)) {
-        Log.d(
-            TAG,
-            "DecodeJob threw unexpectedly" + ", isCancelled: " + isCancelled + ", stage: " + stage,
-            t);
+        Log.d(TAG, "DecodeJob threw unexpectedly" + ", isCancelled: " + isCancelled + ", stage: " + stage, t);
       }
       // When we're encoding we've already notified our callback and it isn't safe to do so again.
       if (stage != Stage.ENCODE) {
@@ -271,7 +268,9 @@ class DecodeJob<R>
 
   private void runWrapped() {
     switch (runReason) {
+      // 初始状态---decodeJob刚被创建后的状态
       case INITIALIZE:
+        // 最终返回一个状态 stage
         stage = getNextStage(Stage.INITIALIZE);
         currentGenerator = getNextGenerator();
         runGenerators();
@@ -306,12 +305,9 @@ class DecodeJob<R>
     currentThread = Thread.currentThread();
     startFetchTime = LogTime.getLogTime();
     boolean isStarted = false;
-    while (!isCancelled
-        && currentGenerator != null
-        && !(isStarted = currentGenerator.startNext())) {
+    while (!isCancelled && currentGenerator != null && !(isStarted = currentGenerator.startNext())) {
       stage = getNextStage(stage);
       currentGenerator = getNextGenerator();
-
       if (stage == Stage.SOURCE) {
         reschedule();
         return;
@@ -321,7 +317,6 @@ class DecodeJob<R>
     if ((stage == Stage.FINISHED || isCancelled) && !isStarted) {
       notifyFailed();
     }
-
     // Otherwise a generator started a new load and we expect to be called back in
     // onDataFetcherReady.
   }
@@ -351,13 +346,10 @@ class DecodeJob<R>
   private Stage getNextStage(Stage current) {
     switch (current) {
       case INITIALIZE:
-        return diskCacheStrategy.decodeCachedResource()
-            ? Stage.RESOURCE_CACHE
-            : getNextStage(Stage.RESOURCE_CACHE);
+        // 如果解码缓存资源，则返回 Stage.RESOURCE_CACHE，否则继续下一个策略---decode策略
+        return diskCacheStrategy.decodeCachedResource() ? Stage.RESOURCE_CACHE : getNextStage(Stage.RESOURCE_CACHE);
       case RESOURCE_CACHE:
-        return diskCacheStrategy.decodeCachedData()
-            ? Stage.DATA_CACHE
-            : getNextStage(Stage.DATA_CACHE);
+        return diskCacheStrategy.decodeCachedData() ? Stage.DATA_CACHE : getNextStage(Stage.DATA_CACHE);
       case DATA_CACHE:
         // Skip loading from source if the user opted to only retrieve the resource from cache.
         return onlyRetrieveFromCache ? Stage.FINISHED : Stage.SOURCE;
@@ -469,8 +461,7 @@ class DecodeJob<R>
     onEncodeComplete();
   }
 
-  private <Data> Resource<R> decodeFromData(
-      DataFetcher<?> fetcher, Data data, DataSource dataSource) throws GlideException {
+  private <Data> Resource<R> decodeFromData(DataFetcher<?> fetcher, Data data, DataSource dataSource) throws GlideException {
     try {
       if (data == null) {
         return null;
@@ -519,15 +510,12 @@ class DecodeJob<R>
     return options;
   }
 
-  private <Data, ResourceType> Resource<R> runLoadPath(
-      Data data, DataSource dataSource, LoadPath<Data, ResourceType, R> path)
-      throws GlideException {
+  private <Data, ResourceType> Resource<R> runLoadPath(Data data, DataSource dataSource, LoadPath<Data, ResourceType, R> path) throws GlideException {
     Options options = getOptionsWithHardwareConfig(dataSource);
     DataRewinder<Data> rewinder = glideContext.getRegistry().getRewinder(data);
     try {
       // ResourceType in DecodeCallback below is required for compilation to work with gradle.
-      return path.load(
-          rewinder, options, width, height, new DecodeCallback<ResourceType>(dataSource));
+      return path.load(rewinder, options, width, height, new DecodeCallback<ResourceType>(dataSource));
     } finally {
       rewinder.cleanup();
     }

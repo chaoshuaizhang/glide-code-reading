@@ -557,8 +557,7 @@ public final class GlideBuilder {
     }
 
     GlideExperiments experiments = glideExperimentsBuilder.build();
-    RequestManagerRetriever requestManagerRetriever =
-        new RequestManagerRetriever(requestManagerFactory, experiments);
+    RequestManagerRetriever requestManagerRetriever = new RequestManagerRetriever(requestManagerFactory, experiments);
 
     return new Glide(
         context,

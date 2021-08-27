@@ -10,6 +10,7 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.util.Log;
 import android.view.View;
 import androidx.annotation.CheckResult;
 import androidx.annotation.DrawableRes;
@@ -39,7 +40,9 @@ import com.bumptech.glide.util.Synthetic;
 import com.bumptech.glide.util.Util;
 import java.io.File;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -63,6 +66,7 @@ public class RequestManager
 
   protected final Glide glide;
   protected final Context context;
+  private Set<Object> mSet = new HashSet<>();
 
   @SuppressWarnings("WeakerAccess")
   @Synthetic
@@ -458,7 +462,11 @@ public class RequestManager
   @CheckResult
   @Override
   public RequestBuilder<Drawable> load(@Nullable String string) {
-    return asDrawable().load(string);
+    RequestBuilder<Drawable> request = asDrawable().load(string);
+    mSet.add(request);
+    Log.d("TEST-TAG", getClass().getSimpleName() + " | " + request.getClass().getSimpleName() + " | " + request.hashCode() + " load: " + string);
+    Log.d("TEST-TAG2", "" + mSet.size());
+    return request;
   }
 
   /**
@@ -591,7 +599,9 @@ public class RequestManager
   @CheckResult
   public <ResourceType> RequestBuilder<ResourceType> as(
       @NonNull Class<ResourceType> resourceClass) {
-    return new RequestBuilder<>(glide, this, resourceClass, context);
+    RequestBuilder<ResourceType> builder = new RequestBuilder<>(glide, this, resourceClass, context);
+    Log.d("TEST-TAG3", "new");
+    return builder;
   }
 
   /**
@@ -668,6 +678,7 @@ public class RequestManager
 
   synchronized void track(@NonNull Target<?> target, @NonNull Request request) {
     targetTracker.track(target);
+    //
     requestTracker.runRequest(request);
   }
 

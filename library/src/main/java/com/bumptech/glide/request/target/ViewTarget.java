@@ -370,13 +370,14 @@ public abstract class ViewTarget<T extends View, Z> extends BaseTarget<Z> {
     }
 
     void getSize(@NonNull SizeReadyCallback cb) {
+      // 获取view的宽、高
       int currentWidth = getTargetWidth();
       int currentHeight = getTargetHeight();
       if (isViewStateAndSizeValid(currentWidth, currentHeight)) {
+        // 仍调用onSizeReady（前边说了cb是SingleRequest）
         cb.onSizeReady(currentWidth, currentHeight);
         return;
       }
-
       // We want to notify callbacks in the order they were added and we only expect one or two
       // callbacks to be added a time, so a List is a reasonable choice.
       if (!cbs.contains(cb)) {
@@ -418,6 +419,7 @@ public abstract class ViewTarget<T extends View, Z> extends BaseTarget<Z> {
       return isDimensionValid(width) && isDimensionValid(height);
     }
 
+    // 获取最后定的高（有一定的计算逻辑）
     private int getTargetHeight() {
       int verticalPadding = view.getPaddingTop() + view.getPaddingBottom();
       LayoutParams layoutParams = view.getLayoutParams();
@@ -425,6 +427,7 @@ public abstract class ViewTarget<T extends View, Z> extends BaseTarget<Z> {
       return getTargetDimen(view.getHeight(), layoutParamSize, verticalPadding);
     }
 
+    // 获取最后定的宽（有一定的计算逻辑）
     private int getTargetWidth() {
       int horizontalPadding = view.getPaddingLeft() + view.getPaddingRight();
       LayoutParams layoutParams = view.getLayoutParams();

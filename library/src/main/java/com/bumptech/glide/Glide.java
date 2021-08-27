@@ -184,8 +184,7 @@ public class Glide implements ComponentCallbacks2 {
   @SuppressWarnings("GuardedBy")
   public static Glide get(@NonNull Context context) {
     if (glide == null) {
-      GeneratedAppGlideModule annotationGeneratedModule =
-          getAnnotationGeneratedGlideModules(context.getApplicationContext());
+      GeneratedAppGlideModule annotationGeneratedModule = getAnnotationGeneratedGlideModules(context.getApplicationContext());
       synchronized (Glide.class) {
         if (glide == null) {
           checkAndInitializeGlide(context, annotationGeneratedModule);
@@ -823,7 +822,13 @@ public class Glide implements ComponentCallbacks2 {
    */
   @NonNull
   public static RequestManager with(@NonNull FragmentActivity activity) {
-    return getRetriever(activity).get(activity);
+    return
+        // 返回一个全局共享的Glide对象，单例
+        // 同时会构造一个RequestManagerRetriever对象
+        Glide.get(activity)
+            // 获取RequestManagerRetriever
+        .getRequestManagerRetriever()
+        .get(activity);
   }
 
   /**
