@@ -413,9 +413,8 @@ public class RequestManagerRetriever implements Handler.Callback {
     if (requestManager == null) {
       // TODO(b/27524013): Factor out this Glide.get() call.
       Glide glide = Glide.get(context);
-      requestManager =
-          factory.build(
-              glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
+      // 构造一个requestManager
+      requestManager = factory.build(glide, current.getGlideLifecycle(), current.getRequestManagerTreeNode(), context);
       // This is a bit of hack, we're going to start the RequestManager, but not the
       // corresponding Lifecycle. It's safe to start the RequestManager, but starting the
       // Lifecycle might trigger memory leaks. See b/154405040
@@ -522,6 +521,7 @@ public class RequestManagerRetriever implements Handler.Callback {
       new RequestManagerFactory() {
         @NonNull
         @Override
+        // ResourceManager的构建过程
         public RequestManager build(
             @NonNull Glide glide,
             @NonNull Lifecycle lifecycle,

@@ -95,10 +95,7 @@ public class MainActivity extends Activity implements Api.Monitor {
 
     private Api.GifResult[] results = EMPTY_RESULTS;
 
-    GifAdapter(
-        Activity activity,
-        RequestBuilder<Drawable> requestBuilder,
-        ViewPreloadSizeProvider<Api.GifResult> preloadSizeProvider) {
+    GifAdapter(Activity activity, RequestBuilder<Drawable> requestBuilder, ViewPreloadSizeProvider<Api.GifResult> preloadSizeProvider) {
       this.activity = activity;
       this.requestBuilder = requestBuilder;
       this.preloadSizeProvider = preloadSizeProvider;
@@ -126,8 +123,7 @@ public class MainActivity extends Activity implements Api.Monitor {
           new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-              ClipboardManager clipboard =
-                  (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
+              ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
               ClipData clip = ClipData.newPlainText("giphy_url", result.images.fixed_height.url);
               Preconditions.checkNotNull(clipboard).setPrimaryClip(clip);
 

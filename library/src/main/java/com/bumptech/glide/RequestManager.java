@@ -36,6 +36,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.request.target.CustomViewTarget;
 import com.bumptech.glide.request.target.Target;
 import com.bumptech.glide.request.transition.Transition;
+import com.bumptech.glide.util.MyLog;
 import com.bumptech.glide.util.Synthetic;
 import com.bumptech.glide.util.Util;
 import java.io.File;
@@ -344,45 +345,6 @@ public class RequestManager
   }
 
   /**
-   * Lifecycle callback that registers for connectivity events (if the
-   * android.permission.ACCESS_NETWORK_STATE permission is present) and restarts failed or paused
-   * requests.
-   */
-  @Override
-  public synchronized void onStart() {
-    resumeRequests();
-    targetTracker.onStart();
-  }
-
-  /**
-   * Lifecycle callback that unregisters for connectivity events (if the
-   * android.permission.ACCESS_NETWORK_STATE permission is present) and pauses in progress loads.
-   */
-  @Override
-  public synchronized void onStop() {
-    pauseRequests();
-    targetTracker.onStop();
-  }
-
-  /**
-   * Lifecycle callback that cancels all in progress requests and clears and recycles resources for
-   * all completed requests.
-   */
-  @Override
-  public synchronized void onDestroy() {
-    targetTracker.onDestroy();
-    for (Target<?> target : targetTracker.getAll()) {
-      clear(target);
-    }
-    targetTracker.clear();
-    requestTracker.clearRequests();
-    lifecycle.removeListener(this);
-    lifecycle.removeListener(connectivityMonitor);
-    Util.removeCallbacksOnUiThread(addSelfToLifecycle);
-    glide.unregisterRequestManager(this);
-  }
-
-  /**
    * Attempts to always load the resource as a {@link android.graphics.Bitmap}, even if it could
    * actually be animated.
    *
@@ -462,11 +424,52 @@ public class RequestManager
   @CheckResult
   @Override
   public RequestBuilder<Drawable> load(@Nullable String string) {
+    // 构建一个RequestBuilder
     RequestBuilder<Drawable> request = asDrawable().load(string);
     mSet.add(request);
-    Log.d("TEST-TAG", getClass().getSimpleName() + " | " + request.getClass().getSimpleName() + " | " + request.hashCode() + " load: " + string);
-    Log.d("TEST-TAG2", "" + mSet.size());
+    MyLog.d("load" + getClass().getSimpleName() + " | " + request.getClass().getSimpleName() + " | " + request.hashCode() + " load: " + string);
     return request;
+  }
+
+  // TODO: 2021/8/30 下面几个方法管理着request的生命周期
+
+  /**
+   * Lifecycle callback that registers for connectivity events (if the
+   * android.permission.ACCESS_NETWORK_STATE permission is present) and restarts failed or paused
+   * requests.
+   */
+  @Override
+  public synchronized void onStart() {
+    resumeRequests();
+    targetTracker.onStart();
+  }
+
+  /**
+   * Lifecycle callback that unregisters for connectivity events (if the
+   * android.permission.ACCESS_NETWORK_STATE permission is present) and pauses in progress loads.
+   */
+  @Override
+  public synchronized void onStop() {
+    pauseRequests();
+    targetTracker.onStop();
+  }
+
+  /**
+   * Lifecycle callback that cancels all in progress requests and clears and recycles resources for
+   * all completed requests.
+   */
+  @Override
+  public synchronized void onDestroy() {
+    targetTracker.onDestroy();
+    for (Target<?> target : targetTracker.getAll()) {
+      clear(target);
+    }
+    targetTracker.clear();
+    requestTracker.clearRequests();
+    lifecycle.removeListener(this);
+    lifecycle.removeListener(connectivityMonitor);
+    Util.removeCallbacksOnUiThread(addSelfToLifecycle);
+    glide.unregisterRequestManager(this);
   }
 
   /**

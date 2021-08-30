@@ -19,6 +19,7 @@ import com.bumptech.glide.load.engine.executor.GlideExecutor;
 import com.bumptech.glide.request.ResourceCallback;
 import com.bumptech.glide.util.Executors;
 import com.bumptech.glide.util.LogTime;
+import com.bumptech.glide.util.MyLog;
 import com.bumptech.glide.util.Preconditions;
 import com.bumptech.glide.util.Synthetic;
 import com.bumptech.glide.util.pool.FactoryPools;
@@ -191,7 +192,8 @@ public class Engine
       // 从内存中加载
       memoryResource = loadFromMemory(key, isMemoryCacheable, startTime);
       if (memoryResource == null) {
-        // 内存为空
+        MyLog.d("内存中 没有");
+        // 内存为空，则开始创建各个与请求相关的类进行网络请求
         return waitForExistingOrStartNewJob(glideContext, model, signature,
             width,
             height,
@@ -216,6 +218,7 @@ public class Engine
     // Avoid calling back while holding the engine lock, doing so makes it easier for callers to
     // deadlock.
     // 内存中有，直接回调内存
+    MyLog.d("内存中有");
     cb.onResourceReady(memoryResource, DataSource.MEMORY_CACHE, /* isLoadedFromAlternateCacheKey= */ false);
     return null;
   }
@@ -252,14 +255,15 @@ public class Engine
       }
       return new LoadStatus(cb, current);
     }
-    // 不存在于当前加载的图片对应的job时，构建一个新的job
+    // 不存在与当前加载的图片对应的job时，构建一个 engineJob
+    // 看起来像执行服务的执行引擎
     EngineJob<R> engineJob = engineJobFactory.build(
             key,
             isMemoryCacheable,
             useUnlimitedSourceExecutorPool,
             useAnimationPool,
             onlyRetrieveFromCache);
-
+    // 构建一个解码的任务（其实是是实现了Runnable的一个执行体）
     DecodeJob<R> decodeJob =
         decodeJobFactory.build(
             glideContext,

@@ -14,9 +14,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.request.target.ViewTarget;
 import com.bumptech.glide.samples.imgur.api.Image;
 import dagger.android.AndroidInjection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.inject.Inject;
@@ -61,7 +63,9 @@ public final class MainActivity extends AppCompatActivity {
 
               @Override
               public void onNext(List<Image> images) {
-                adapter.setData(images);
+                List<Image> tmp = new ArrayList<>();
+                tmp.add(images.get(0));
+                adapter.setData(tmp);
               }
             });
   }
@@ -93,15 +97,19 @@ public final class MainActivity extends AppCompatActivity {
       Image image = images.get(position);
       vh.title.setText(TextUtils.isEmpty(image.title) ? image.description : image.title);
       // ImgurGlide.with(vh.imageView).load(image.link).into(vh.imageView);
+      // TODO: 2021/8/30 这里是起始点
       /*
-       * Glide对象 单例
-       * RequestManager 单例
+       * Glide对象 单例 全局唯一
+       * RequestManager 单例 当前Activity/Fragment中唯一
        * */
-      // 获取一个requestManager
+      // 获取一个requestManager，每个Activity与Fragment分别对应一个RequestManager，，因为要和页面的生命周期绑定
+      // 如果是在子线程中加载图片，则会使用application的context，获取的RequestManager是全局单例的，生命周期是整个进程的生命周期
+      //
       Glide.with(vh.imageView)
           // load默认替我们执行了asDrawable方法
           // 返回一个RequestBuilder-实际上是GlideRequest，每进行一次请求，就会构建一个GlideRequest实例，这个对象是运行时生成的类
           .load(image.link)
+          //
           .into(vh.imageView);
     }
 

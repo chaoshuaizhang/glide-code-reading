@@ -734,6 +734,7 @@ public class RequestBuilder<TranscodeType> extends BaseRequestOptions<RequestBui
     requestManager.clear(target);
     // 对target（即view）设置一个tag，tag即为 request
     target.setRequest(request);
+    // here
     requestManager.track(target, request);
     return target;
   }

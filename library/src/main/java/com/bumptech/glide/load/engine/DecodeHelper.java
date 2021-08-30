@@ -15,6 +15,7 @@ import com.bumptech.glide.load.engine.cache.DiskCache;
 import com.bumptech.glide.load.model.ModelLoader;
 import com.bumptech.glide.load.model.ModelLoader.LoadData;
 import com.bumptech.glide.load.resource.UnitTransformation;
+import com.bumptech.glide.util.MyLog;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -186,7 +187,7 @@ final class DecodeHelper<Transcode> {
 
   List<ModelLoader<File, ?>> getModelLoaders(File file) throws Registry.NoModelLoaderAvailableException {
     List<ModelLoader<File, ?>> loaders = glideContext.getRegistry().getModelLoaders(file);
-    Log.d("vnjfnvfnvbf", "getModelLoaders: " + loaders.size());
+    MyLog.d("主要是校验gif有多少帧  getModelLoaders: " + loaders.size());
     return loaders;
   }
 

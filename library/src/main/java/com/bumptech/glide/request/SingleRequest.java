@@ -249,11 +249,12 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
       // and can run again from the beginning.
 
       status = Status.WAITING_FOR_SIZE;
+      // onSizeReady很重要
       if (Util.isValidDimensions(overrideWidth, overrideHeight)) {
         // 如果设置了override，则在这里执行onSizeReady
         onSizeReady(overrideWidth, overrideHeight);
       } else {
-        // 默认情况，注意这里传的回调是自己：this
+        // 默认情况，注意这里传的回调是自己：this，在回调方法里继续执行onSizeReady
         target.getSize(this);
       }
       if ((status == Status.RUNNING || status == Status.WAITING_FOR_SIZE) && canNotifyStatusChanged()) {
@@ -570,7 +571,6 @@ public final class SingleRequest<R> implements Request, SizeReadyCallback, Resou
           status = Status.COMPLETE;
           return;
         }
-
         onResourceReady((Resource<R>) resource, (R) received, dataSource, isLoadedFromAlternateCacheKey);
       }
     } finally {

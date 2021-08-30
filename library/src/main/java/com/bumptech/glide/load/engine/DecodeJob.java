@@ -232,6 +232,7 @@ class DecodeJob<R>
         notifyFailed();
         return;
       }
+      //
       runWrapped();
     } catch (CallbackException e) {
       // If a callback not controlled by Glide throws an exception, we should avoid the Glide
@@ -304,7 +305,7 @@ class DecodeJob<R>
   private void runGenerators() {
     currentThread = Thread.currentThread();
     startFetchTime = LogTime.getLogTime();
-    boolean isStarted = false;
+    boolean isStarted = false;// ResourceCacheGenerator DataCacheGenerator SourceGenerator
     while (!isCancelled && currentGenerator != null && !(isStarted = currentGenerator.startNext())) {
       stage = getNextStage(stage);
       currentGenerator = getNextGenerator();
@@ -346,7 +347,7 @@ class DecodeJob<R>
   private Stage getNextStage(Stage current) {
     switch (current) {
       case INITIALIZE:
-        // 如果解码缓存资源，则返回 Stage.RESOURCE_CACHE，否则继续下一个策略---decode策略
+        // 如果解码缓存资源，则返回 Stage.RESOURCE_CACHE，否则继续下一个策略---decode策略 目前看是 DiskCacheStrategy
         return diskCacheStrategy.decodeCachedResource() ? Stage.RESOURCE_CACHE : getNextStage(Stage.RESOURCE_CACHE);
       case RESOURCE_CACHE:
         return diskCacheStrategy.decodeCachedData() ? Stage.DATA_CACHE : getNextStage(Stage.DATA_CACHE);
